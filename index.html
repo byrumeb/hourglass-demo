@@ -90,6 +90,7 @@
     // color helpers
 
     const interpolate = (c1, c2, f) => {
+
       return {
         r: Math.floor(c1.r + (c2.r - c1.r) * f),
         g: Math.floor(c1.g + (c2.g - c1.g) * f),
@@ -97,158 +98,28 @@
       };
     };
 
-    // returns a random color
-    const randomColor = () => {
-      const r = Math.floor(Math.random() * 255);
-      const g = Math.floor(Math.random() * 255);
-      const b = Math.floor(Math.random() * 255);
-      return { r, g, b };
-    };
+    // generates an array of 256 colors
+    // forming a linear gradient of the form
+    // [c1, ... ,c2]
 
-    // returns a random color palette with 256 color entries
-    const makeRandomPalette = () => {
-      const c1 = randomColor(25,25,112);
-      const c2 = randomColor(4,96,217);
-      const c3 = randomColor(113,150,3);
-      const c4 = randomColor(255,25,229);
-      const c5 = randomColor(255,153,51);
-
-      return makeFiveColorGradient(c1, c2, c3, c4, c5);
-    };
-
-    const makeFiveColorGradient = (c1, c2, c3, c4, c5) => {
-      const g = [];
-
-      for (let i = 0; i < 64; i++) {
-        const f = i / 64;
-        g[i] = interpolate(c1, c2, f);
-      }
-
-      for (let i = 64; i < 128; i++) {
-        const f = (i - 64) / 64;
-        g[i] = interpolate(c2, c3, f);
-      }
-
-      for (let i = 128; i < 192; i++) {
-        const f = (i - 128) / 64;
-        g[i] = interpolate(c3, c4, f);
-      }
-
-      for (let i = 192; i < 256; i++) {
-        const f = (i - 192) / 64;
-        g[i] = interpolate(c4, c5, f);
-      }
-
-      return g;
-    };
-
-    // offsets for moving height maps
-    let dx1 = 0;
-    let dy1 = 0;
-
-    let dx2 = 0;
-    let dy2 = 0;
-
-    // adjust height maps offsets
-    const moveHeightMaps = t => {
-      dx1 = Math.floor(
-        (((Math.cos(t * 0.0002 + 0.4 + Math.PI) + 1) / 2) * mapSize) / 2
-      );
-      dy1 = Math.floor((((Math.cos(t * 0.0003 - 0.1) + 1) / 2) * mapSize) / 2);
-      dx2 = Math.floor((((Math.cos(t * -0.0002 + 1.2) + 1) / 2) * mapSize) / 2);
-      dy2 = Math.floor(
-        (((Math.cos(t * -0.0003 - 0.8 + Math.PI) + 1) / 2) * mapSize) / 2
-      );
-    };
-
-    // two palettes we interpolate between
-    const palettes = [makeRandomPalette(), makeRandomPalette()];
-
-    // current palette is edstablished durting animation
-    let palette = [];
-
-    // stores whether we're interpolating colors
-    // from palette 0 -> 1 (1) or 1 -> 0 (-1)
-    let prevDirection = 1;
-
-    const updatePalette = t => {
-      const timeScale = 0.0005;
-      const x = t * timeScale;
-
-      // normalized value 0..1 used to interpolate palette colors
-      const inter = (Math.cos(x) + 1) / 2;
-
-      // did we switch direction, and should ergo pick a new palette
-      // random palette to interpolate towards?
-
-      const direction = -Math.sin(x) >= 0 ? 1 : -1;
-      if (prevDirection != direction) {
-        prevDirection = direction;
-        if (direction == -1) {
-          palettes[0] = makeRandomPalette();
-        } else {
-          palettes[1] = makeRandomPalette();
-        }
-      }
-
-      // create interpolated palette for current frame
-      for (let i = 0; i < 256; i++) {
-        palette[i] = interpolate(palettes[0][i], palettes[1][i], inter);
-      }
-    };
-
-    const updateImageData = () => {
-      for (let u = 0; u < imgSize; u++) {
-        for (let v = 0; v < imgSize; v++) {
-          // indexes into height maps for pixel
-          const i = (u + dy1) * mapSize + (v + dx1);
-          const k = (u + dy2) * mapSize + (v + dx2);
-
-          // index for pixel in image data
-          // remember it's 4 bytes per pixel
-          const j = u * imgSize * 4 + v * 4;
-
-          // height value of 0..255
-          let h = heightMap1[i] + heightMap2[k];
-          // get color value from current palette
-          let c = palette[h];
-
-          // h = heightMap2[i];
-          // c = { r: h, g: h, b: h };
-
-          // set pixel data
-          image.data[j] = c.r;
-          image.data[j + 1] = c.g;
-          image.data[j + 2] = c.b;
-        }
-      }
-    };
-
-    // helper to create a linear gradient palette
     const linearGradient = (c1, c2) => {
-      const g = [];
-
-      // interpolate between the colors
-      // in the gradient
-
-      for (let i = 0; i < 256; i++) {
-        const f = i / 255;
-        g[i] = interpolate(c1, c2, f);
-      }
-
-      return g;
+        const g = [];
+        // interpolate between the colors in the gradient
+        for (let i = 0; i < 256; i++) {
+            const f = i / 255;
+            g[i] = interpolate(c1, c2, f);
+        }
+    return g;
     };
+   
+   let palette = linearGradient (
+       {r:25 g:25 b:112 }, // c1 navy
+       {r:255 g:25 b:239 } //c2 pink
+   );
+   // height value of 0..255
+let h = heightMap1[i] + heightMap2[k];
+// get color value from current palette
+let c = palette[h];
 
-    const tick = time => {
-      moveHeightMaps(time);
-      updatePalette(time);
-      updateImageData();
-
-      c.putImageData(image, 0, 0);
-
-      requestAnimationFrame(tick);
-    };
-
-    requestAnimationFrame(tick);
   </script>
 </body>
