@@ -107,11 +107,11 @@
 
     // returns a random color palette with 256 color entries
     const makeRandomPalette = () => {
-      const c1 = midnightblue(25,25,112);
-      const c2 = lightblue(4,96,217);
-      const c3 = green(113,150,3);
-      const c4 = pink(255,25,229);
-      const c5 = orange(255,153,51);
+      const c1 = randomColor(25,25,112);
+      const c2 = randomColor(4,96,217);
+      const c3 = randomColor(113,150,3);
+      const c4 = randomColor(255,25,229);
+      const c5 = randomColor(255,153,51);
 
       return makeFiveColorGradient(c1, c2, c3, c4, c5);
     };
