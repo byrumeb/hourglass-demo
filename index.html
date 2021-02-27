@@ -167,7 +167,37 @@
     const palettes = [makeRandomPalette(), makeRandomPalette()];
 
     // current palette is edstablished durting animation
-    let palette = []
+    let palette = [];
+
+    // stores whether we're interpolating colors
+    // from palette 0 -> 1 (1) or 1 -> 0 (-1)
+    let prevDirection = 1;
+
+    const updatePalette = t => {
+      const timeScale = 0.0005;
+      const x = t * timeScale;
+
+      // normalized value 0..1 used to interpolate palette colors
+      const inter = (Math.cos(x) + 1) / 2;
+
+      // did we switch direction, and should ergo pick a new palette
+      // random palette to interpolate towards?
+
+      const direction = -Math.sin(x) >= 0 ? 1 : -1;
+      if (prevDirection != direction) {
+        prevDirection = direction;
+        if (direction == -1) {
+          palettes[0] = makeRandomPalette();
+        } else {
+          palettes[1] = makeRandomPalette();
+        }
+      }
+
+      // create interpolated palette for current frame
+      for (let i = 0; i < 256; i++) {
+        palette[i] = interpolate(palettes[0][i], palettes[1][i], inter);
+      }
+    };
 
    const updateImageData = () => {
       for (let u = 0; u < imgSize; u++) {
